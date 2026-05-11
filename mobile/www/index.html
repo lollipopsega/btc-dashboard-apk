@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0f2027">
+    <title>BTC Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app">
+      <header class="topbar">
+        <div>
+          <h1>BTC Dashboard</h1>
+          <p id="statusLine">Cargando datos...</p>
+        </div>
+        <button id="refreshBtn" type="button">Actualizar</button>
+      </header>
+
+      <section class="hero">
+        <article class="card">
+          <h2>Precio actual</h2>
+          <div id="price" class="price">$0</div>
+          <div id="change24h" class="muted">--</div>
+          <div class="mini-row">
+            <span>Max. 52 semanas</span>
+            <strong id="max52w">$0</strong>
+          </div>
+        </article>
+
+        <article class="card">
+          <h2>Media 200D</h2>
+          <div id="ma200" class="fair">$0</div>
+          <div id="ratio" class="ratio">Ratio: --</div>
+          <p id="ratioDesc" class="muted">--</p>
+        </article>
+
+        <article class="card">
+          <h2>Ciclo de halving</h2>
+          <div class="halving-main">Proximo: <strong id="halvingDate">--</strong></div>
+          <div class="progress"><div id="halvingBar"></div></div>
+          <div class="split">
+            <span><strong id="daysLeft">--</strong> dias</span>
+            <span><strong id="blocksLeft">--</strong> bloques</span>
+          </div>
+        </article>
+      </section>
+
+      <section class="card">
+        <h2>Zonas de entrada</h2>
+        <div id="zones"></div>
+      </section>
+
+      <section class="card">
+        <h2>Simulador</h2>
+        <div class="simulator">
+          <label for="targetPrice">Precio BTC</label>
+          <input id="targetPrice" type="number" min="1" step="100" value="65000">
+          <strong id="targetResult">--</strong>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Indicadores clave</h2>
+        <div id="metrics"></div>
+        <div class="signal">
+          <div id="recommendation">--</div>
+          <span id="strength">--</span>
+          <p id="signalMessage">--</p>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Distribucion de valor</h2>
+        <div id="valueChart" class="chart"></div>
+      </section>
+
+      <section class="card">
+        <h2>Tendencia 90 dias</h2>
+        <div id="trendChart" class="chart"></div>
+      </section>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>
