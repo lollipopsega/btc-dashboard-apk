@@ -191,6 +191,45 @@ button {
   gap: 10px;
 }
 
+.position-inputs {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.position-grid {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.position-box {
+  min-height: 84px;
+  display: grid;
+  gap: 6px;
+  align-content: center;
+  padding: 14px;
+  border-radius: 10px;
+  background: var(--panel-strong);
+}
+
+.position-box span {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.position-box strong {
+  font-size: 1.35rem;
+}
+
+.value-positive {
+  color: var(--green);
+}
+
+.value-negative {
+  color: var(--red);
+}
+
 input {
   min-height: 46px;
   padding: 0 12px;
@@ -229,6 +268,10 @@ input {
   padding: 10px;
   border-radius: 15px;
   background: rgba(255, 255, 255, 0.05);
+}
+
+.position-chart {
+  margin-top: 8px;
 }
 
 .chart svg {
@@ -275,5 +318,11 @@ input {
   .split {
     grid-template-columns: 1fr auto;
     align-items: center;
+  }
+
+  .position-inputs,
+  .position-grid {
+    grid-template-columns: repeat(2, 1fr);
+    align-items: end;
   }
 }
