@@ -61,6 +61,38 @@
       </section>
 
       <section class="card">
+        <h2>Mi posicion BTC</h2>
+        <div class="position-inputs">
+          <label for="entryPrice">Precio promedio de compra</label>
+          <input id="entryPrice" type="number" min="1" step="100" value="60000">
+
+          <label for="btcAmount">BTC acumulado</label>
+          <input id="btcAmount" type="number" min="0" step="0.00000001" placeholder="Opcional">
+        </div>
+
+        <div class="position-grid">
+          <div class="position-box">
+            <span>Ganancia actual</span>
+            <strong id="positionPnlPercent">--</strong>
+          </div>
+          <div class="position-box">
+            <span>Ganancia por BTC</span>
+            <strong id="positionPnlPerBtc">--</strong>
+          </div>
+          <div class="position-box">
+            <span>Valor actual</span>
+            <strong id="positionValue">--</strong>
+          </div>
+          <div class="position-box">
+            <span>Ganancia total</span>
+            <strong id="positionPnlTotal">--</strong>
+          </div>
+        </div>
+
+        <div class="chart position-chart" id="positionChart"></div>
+      </section>
+
+      <section class="card">
         <h2>Indicadores clave</h2>
         <div id="metrics"></div>
         <div class="signal">
