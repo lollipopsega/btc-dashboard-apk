@@ -1,11 +1,18 @@
 const API_CACHE_KEY = "btc-dashboard-cache-v1";
+const POSITION_CACHE_KEY = "btc-dashboard-position-v1";
 const $ = (id) => document.getElementById(id);
 
 let dashboard = null;
+let position = readPosition();
 
 function usd(value, digits = 0) {
   if (!Number.isFinite(value)) return "Sin datos";
   return "$" + value.toLocaleString("en-US", { maximumFractionDigits: digits });
+}
+
+function percent(value, digits = 2) {
+  if (!Number.isFinite(value)) return "--";
+  return (value >= 0 ? "+" : "") + value.toFixed(digits) + "%";
 }
 
 function saveCache(data) {
@@ -18,6 +25,36 @@ function readCache() {
   } catch {
     return null;
   }
+}
+
+function readPosition() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(POSITION_CACHE_KEY));
+    return {
+      entryPrice: Number(saved.entryPrice) || 60000,
+      btcAmount: saved.btcAmount || ""
+    };
+  } catch {
+    return { entryPrice: 60000, btcAmount: "" };
+  }
+}
+
+function savePosition() {
+  localStorage.setItem(POSITION_CACHE_KEY, JSON.stringify(position));
+}
+
+function syncPositionInputs() {
+  $("entryPrice").value = position.entryPrice || "";
+  $("btcAmount").value = position.btcAmount || "";
+}
+
+function readPositionInputs() {
+  position = {
+    entryPrice: Number($("entryPrice").value) || 0,
+    btcAmount: $("btcAmount").value
+  };
+  savePosition();
+  updatePosition();
 }
 
 async function fetchJson(url, timeoutMs = 9000) {
@@ -435,6 +472,7 @@ function render(data) {
   renderChart("valueChart", data.chart, ["close", "upper", "ma200", "lower"]);
   renderChart("trendChart", data.chart.slice(-90), ["close"]);
   updateSimulator();
+  updatePosition();
 }
 
 function renderZones(data) {
@@ -467,6 +505,49 @@ function renderSignal(data) {
   $("recommendation").style.color = data.color;
   $("strength").textContent = "Fuerza de senal: " + data.strength + "%";
   $("signalMessage").textContent = data.message;
+}
+
+function updatePosition() {
+  if (!dashboard) return;
+  renderPosition(dashboard);
+}
+
+function setValueState(id, value, text) {
+  const el = $(id);
+  el.textContent = text;
+  el.className = Number.isFinite(value) && value < 0 ? "value-negative" : "value-positive";
+}
+
+function renderPosition(data) {
+  const entryPrice = Number(position.entryPrice);
+  const btcAmount = Number(position.btcAmount);
+  const hasAmount = Number.isFinite(btcAmount) && btcAmount > 0;
+
+  if (!Number.isFinite(entryPrice) || entryPrice <= 0 || !Number.isFinite(data.price)) {
+    $("positionPnlPercent").textContent = "--";
+    $("positionPnlPerBtc").textContent = "--";
+    $("positionValue").textContent = "--";
+    $("positionPnlTotal").textContent = "--";
+    renderProfitChart("positionChart", [], 0);
+    return;
+  }
+
+  const pnlPerBtc = data.price - entryPrice;
+  const pnlPercent = (pnlPerBtc / entryPrice) * 100;
+  const currentValue = hasAmount ? data.price * btcAmount : null;
+  const pnlTotal = hasAmount ? pnlPerBtc * btcAmount : null;
+
+  setValueState("positionPnlPercent", pnlPercent, percent(pnlPercent));
+  setValueState("positionPnlPerBtc", pnlPerBtc, (pnlPerBtc >= 0 ? "+" : "-") + usd(Math.abs(pnlPerBtc), 2));
+  $("positionValue").textContent = hasAmount ? usd(currentValue, 2) : "Ingresa BTC";
+  if (hasAmount) {
+    setValueState("positionPnlTotal", pnlTotal, (pnlTotal >= 0 ? "+" : "-") + usd(Math.abs(pnlTotal), 2));
+  } else {
+    $("positionPnlTotal").textContent = "Ingresa BTC";
+    $("positionPnlTotal").className = "";
+  }
+
+  renderProfitChart("positionChart", data.chart, entryPrice);
 }
 
 function updateSimulator() {
@@ -515,6 +596,53 @@ function renderChart(id, rows, keys) {
   el.innerHTML = svg;
 }
 
+function renderProfitChart(id, rows, entryPrice) {
+  const el = $(id);
+  if (!rows || rows.length < 2 || !Number.isFinite(entryPrice) || entryPrice <= 0) {
+    el.innerHTML = '<div class="empty">Ingresa tu precio de compra</div>';
+    return;
+  }
+
+  const pointsData = rows
+    .filter((row) => Number.isFinite(row.close))
+    .map((row) => ({ date: row.date, value: ((row.close - entryPrice) / entryPrice) * 100 }));
+
+  if (pointsData.length < 2) {
+    el.innerHTML = '<div class="empty">Sin datos para graficar</div>';
+    return;
+  }
+
+  const width = 760;
+  const height = 260;
+  const pad = { left: 54, right: 12, top: 12, bottom: 24 };
+  const rawMin = Math.min(0, ...pointsData.map((row) => row.value));
+  const rawMax = Math.max(0, ...pointsData.map((row) => row.value));
+  const spread = Math.max(6, rawMax - rawMin);
+  const min = rawMin - spread * 0.08;
+  const max = rawMax + spread * 0.08;
+  const latest = pointsData[pointsData.length - 1].value;
+  const color = latest >= 0 ? "#4CAF50" : "#f44336";
+  const x = (i) => pad.left + (i / (pointsData.length - 1)) * (width - pad.left - pad.right);
+  const y = (v) => pad.top + (1 - (v - min) / (max - min || 1)) * (height - pad.top - pad.bottom);
+  const zeroY = y(0);
+
+  let svg = '<svg viewBox="0 0 ' + width + ' ' + height + '">';
+  for (let i = 0; i <= 4; i++) {
+    const gy = pad.top + (i / 4) * (height - pad.top - pad.bottom);
+    const val = max - (i / 4) * (max - min);
+    svg += '<line class="grid-line" x1="' + pad.left + '" y1="' + gy + '" x2="' + (width - pad.right) + '" y2="' + gy + '"/>';
+    svg += '<text class="axis-text" x="4" y="' + (gy + 4) + '">' + percent(val, 0) + '</text>';
+  }
+  svg += '<line x1="' + pad.left + '" y1="' + zeroY + '" x2="' + (width - pad.right) + '" y2="' + zeroY + '" stroke="#FFD700" stroke-width="1.5" stroke-dasharray="4 5"/>';
+  const points = pointsData.map((row, i) => x(i) + "," + y(row.value)).join(" ");
+  svg += '<polyline points="' + points + '" fill="none" stroke="' + color + '" stroke-width="3"/>';
+  svg += "</svg>";
+  el.innerHTML = svg;
+}
+
 $("refreshBtn").addEventListener("click", loadDashboard);
 $("targetPrice").addEventListener("input", updateSimulator);
+$("entryPrice").addEventListener("input", readPositionInputs);
+$("btcAmount").addEventListener("input", readPositionInputs);
+syncPositionInputs();
 loadDashboard();
